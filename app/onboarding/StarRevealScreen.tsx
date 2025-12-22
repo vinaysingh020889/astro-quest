@@ -27,7 +27,7 @@ type GuideData = {
 };
 
 // ----- DIRECTLY DECLARE YOUR GEMINI KEY HERE -----
-const GEMINI_API_KEY = "AIzaSyB2j2BBDUkvvrYm5g-24bquvlmv3cbW6eo"; // <- Replace with your actual key
+const getGeminiKey = () => process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
 
 export default function StarRevealScreen() {
   const router = useRouter();
@@ -81,6 +81,15 @@ export default function StarRevealScreen() {
 
   // Generate predictions
   const generatePredictions = async () => {
+    const GEMINI_API_KEY = getGeminiKey();
+    if (!GEMINI_API_KEY) {
+  const fallback = ["Gemini key missing in .env", "Add EXPO_PUBLIC_GEMINI_API_KEY and restart Expo."];
+  setPredictions(fallback);
+  setCurrentText(fallback[0]);
+  await AsyncStorage.setItem("userPredictions", JSON.stringify(fallback));
+  return;
+}
+
     const { name, birthdate, birthtime, birthplace } = await fetchUserData();
     if (name && birthdate && birthtime && birthplace) {
       const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
@@ -109,7 +118,7 @@ Provide exactly 2 predictions, each in one sentence, maximum 20 words.
       try {
         const response = await ai.models.generateContent({
           model: "gemini-2.5-flash",
-          contents: prompt,
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
         });
 
         if (response.text) {

@@ -25,8 +25,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ALL_GUIDES, Guide as GuideType } from "../../data/guides";
 import { colors, spacing } from "../../theme";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "AIzaSyB2j2BBDUkvvrYm5g-24bquvlmv3cbW6eo";
-const MODEL = "gemini-1.5-pro-latest";
+const getGeminiKey = () => process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
+const MODEL = "gemini-2.5-flash";
 
 const USER_AVATAR = require("../../assets/images/user.png");
 const DEFAULT_GUIDE_IMG = require("../../assets/images/guides/guide1-lady-Asian.jpg");
@@ -135,15 +135,6 @@ Reply naturally, short, mentor-like, and contextual. Reference the user's name/D
 
 
 export default function ChatScreen() {
-const handleInputSuggestion = (value: string) => {
-  setText(value);
-  if (waitingForUserInputKey) {
-    setPendingInfo(prev => ({ ...prev, [waitingForUserInputKey]: value }));
-    setWaitingForUserInputKey(null);
-    setSystemNotes(prev => ({ ...prev, [waitingForUserInputKey]: value })); // keep notes in sync
-  }
-  handleSend(value); // auto-send after tapping
-};
 
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
@@ -157,6 +148,21 @@ const handleInputSuggestion = (value: string) => {
   const [inputFocused, setInputFocused] = useState(false);
   const [pendingInfo, setPendingInfo] = useState<PendingInfo>({});
   const [waitingForUserInputKey, setWaitingForUserInputKey] = useState<keyof PendingInfo | null>(null);
+  const handleInputSuggestion = (value: string) => {
+  setText(value);
+
+  if (waitingForUserInputKey) {
+    const key = waitingForUserInputKey; // store first
+
+    setPendingInfo((prev) => ({ ...prev, [key]: value }));
+    setSystemNotes((prev) => ({ ...prev, [key]: value }));
+
+    setWaitingForUserInputKey(null);
+  }
+
+  handleSend(value); // auto-send after tap
+};
+
   const flatListRef = useRef<FlatList<Message>>(null);
   const inputRef = useRef<TextInput>(null);
   const animTranslateY = useRef(new Animated.Value(0)).current;
@@ -305,33 +311,54 @@ useEffect(() => {
 }, [messages]);
 
   // API call
-  async function callGemini(promptText: string): Promise<string> {
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_KEY") {
-      return "I can't connect to the stars right now. Please try again later.";
-    }
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }] }],
-          }),
-        }
-      );
-      const json = await res.json();
-      return (
-        json?.candidates?.[0]?.content?.parts?.[0]?.text ||
-        "The stars are guiding you..."
-      );
-    } catch {
-      return "A small cosmic interference — try again.";
-    } finally {
-      setLoading(false);
-    }
+async function callGemini(promptText: string): Promise<string> {
+  const GEMINI_API_KEY = getGeminiKey();
+
+  if (!GEMINI_API_KEY) {
+    return "⚠️ Gemini key missing. Add EXPO_PUBLIC_GEMINI_API_KEY in .env and restart Expo (npx expo start -c).";
   }
+
+  setLoading(true);
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+
+        // ✅ Correct request body
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: promptText }],
+            },
+          ],
+        }),
+      }
+    );
+
+    const json = await res.json();
+
+    // ✅ Helpful error print (optional but recommended)
+    if (!res.ok) {
+      console.log("Gemini error response:", json);
+      return json?.error?.message || "Gemini error. Please try again.";
+    }
+
+    return (
+      json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
+      "The stars are guiding you..."
+    );
+  } catch (e) {
+    console.log("Gemini call failed:", e);
+    return "A small cosmic interference — try again.";
+  } finally {
+    setLoading(false);
+  }
+}
+
 
   function buildClassificationPrompt(userMsg: string) {
     return `Classify this question into one of the following astrology types: PrashnaKundali, JanamKundali, LifePath, Horoscope, Other.\nQuestion: "${userMsg}"\nReturn only the type.`;
@@ -354,15 +381,20 @@ const handleSend = async (overrideText?: string) => {
   setInputHeight(MIN_INPUT_HEIGHT);
 
   // Handle waiting for missing info
-  if (waitingForUserInputKey) {
-    setPendingInfo((prev) => ({ ...prev, [waitingForUserInputKey]: trimmed }));
-    setWaitingForUserInputKey(null);
-    setMessages((prev) => [
-      ...prev,
-      { id: String(Date.now()), from: "guide", text: "Got it! 🌟", timestamp: timestampNow() },
-    ]);
-    return;
-  }
+if (waitingForUserInputKey) {
+  const key = waitingForUserInputKey;
+
+  setPendingInfo((prev) => ({ ...prev, [key]: trimmed }));
+  setSystemNotes((prev) => ({ ...prev, [key]: trimmed })); // ✅ important
+
+  setWaitingForUserInputKey(null);
+
+  setMessages((prev) => [
+    ...prev,
+    { id: String(Date.now()), from: "guide", text: "Got it! 🌟", timestamp: timestampNow() },
+  ]);
+  return;
+}
 
   const intent = detectIntent(trimmed);
 
@@ -442,9 +474,6 @@ setMessages(prev => [
   ...prev,
   { id: guideMessageId, from: "guide", text: "", timestamp: timestampNow() }
 ]);
-
-// Keep systemNotes synced with pending info
-setSystemNotes(prev => ({ ...prev, ...pendingInfo, lastTopic: astrologyType }));
 
 // Update conversation summary
 setConversationSummary(prev => {

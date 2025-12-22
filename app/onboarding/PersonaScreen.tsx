@@ -26,7 +26,9 @@ import { ALL_GUIDES } from "../../data/guides";
 import { colors, glassStyle, gradients, spacing } from "../../theme";
 
 const { width, height } = Dimensions.get("window");
-const GEMINI_API_KEY = "AIzaSyB2j2BBDUkvvrYm5g-24bquvlmv3cbW6eo"; // Replace with actual key
+const getGeminiKey = () => process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
+
+
 const makeId = (prefix = "id") =>
   `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
 
@@ -253,63 +255,84 @@ useEffect(() => {
   // Send user input
 const sendUserQuery = async () => {
   if (!userInput.trim()) return;
+
   const query = userInput.trim();
 
-  // Push user message
+  // show user message
   setMessages((prev) => [...prev, { id: makeId("msg"), type: "user", text: query }]);
   setUserInput("");
   setInputVisible(false);
   setLoading(true);
 
-  const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-const prompt = `You are a highly respected Indian Vedic astrologer, deeply skilled in Prashna Kundali (Horary Astrology). 
-Carefully consider planetary positions, houses, nakshatras, and key yogas relevant to the query. 
-Respond in 1 to 2 sentences with clarity, precision, and authority—your tone must be professional, motivating, and spiritually uplifting. 
-If the situation demands, highlight special planetary influences, remedial measures, or auspicious timings that strengthen the guidance. 
+  const GEMINI_API_KEY = getGeminiKey();
+
+  // 🔒 KEY CHECK
+  if (!GEMINI_API_KEY) {
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: makeId("msg"),
+        type: "guide",
+        text: "⚠️ Gemini API key missing. Add EXPO_PUBLIC_GEMINI_API_KEY and restart Expo.",
+      },
+    ]);
+    setLoading(false);
+    setInputVisible(true);
+    return;
+  }
+
+  const now = new Date().toISOString();
+
+  const prompt = `
+You are a highly respected Indian Vedic astrologer, deeply skilled in Prashna Kundali (Horary Astrology).
+
+Respond in 1–2 sentences only.
+Be precise, calm, spiritual, and confident.
 
 Question: ${query}
-Time of asking: ${currentTime}
+Time of asking: ${now}
 Location: ${location ? `Lat ${location.lat}, Lon ${location.lon}` : "Unknown"}
 `;
 
-
   try {
+    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: prompt,
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: prompt }],
+        },
+      ],
     });
 
-    const text = response.text || "The stars are aligning... but the answer is hidden for now.";
+    const text =
+      response.text?.trim() ||
+      "The stars are silent right now. Please try again shortly.";
 
-    // ✅ Save message to chat
     const newMessage = { id: makeId("msg"), type: "guide", text };
     setMessages((prev) => [...prev, newMessage]);
 
-    // ✅ Save to userPredictions so Chat.tsx can read it
-const prevPredsRaw = await AsyncStorage.getItem("userPredictions");
-let prevPreds: string[] = [];
-if (prevPredsRaw) {
-  try {
-    prevPreds = JSON.parse(prevPredsRaw);
-    if (!Array.isArray(prevPreds)) prevPreds = [];
-  } catch {
-    prevPreds = [];
-  }
-}
-prevPreds.push(text); // Add the new Prashna Kundali response
-await AsyncStorage.setItem("userPredictions", JSON.stringify(prevPreds));
+    // persist predictions
+    const prevRaw = await AsyncStorage.getItem("userPredictions");
+    const prev = prevRaw ? JSON.parse(prevRaw) : [];
+    prev.push(text);
+    await AsyncStorage.setItem("userPredictions", JSON.stringify(prev));
 
     setTimeout(() => setCtaVisible(true), 500);
   } catch (err) {
-    console.error(err);
+    console.error("Gemini error:", err);
     setMessages((prev) => [
       ...prev,
       { id: makeId("msg"), type: "guide", text: "I am unable to read the stars right now." },
     ]);
   } finally {
     setLoading(false);
+    setInputVisible(true);
   }
 };
+
 
 
   // Finish onboarding
