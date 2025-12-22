@@ -5,6 +5,10 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
+import { Platform } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+
+
 import {
   Animated,
   Dimensions,
@@ -12,7 +16,7 @@ import {
   Image,
   ImageSourcePropType,
   Keyboard,
-  KeyboardAvoidingView, Modal, Platform,
+  KeyboardAvoidingView, Modal,
   StyleSheet,
   Text,
   TextInput,
@@ -120,29 +124,29 @@ export default function BirthFlowScreen() {
 
       if (name) setUserName(name);
       if (date) {
-const [y, m, d] = date.split("-").map(Number);
-const parsed = new Date(y, m - 1, d);
-  if (!isNaN(parsed.getTime())) {
-    setBirthDate(parsed);
-  } else {
-    console.log("Invalid stored birthDate:", date);
-    setBirthDate(null);
-  }
-}
+        const [y, m, d] = date.split("-").map(Number);
+        const parsed = new Date(y, m - 1, d);
+        if (!isNaN(parsed.getTime())) {
+          setBirthDate(parsed);
+        } else {
+          console.log("Invalid stored birthDate:", date);
+          setBirthDate(null);
+        }
+      }
 
-if (time) {
-  const parsed = new Date(time);
-  if (!isNaN(parsed.getTime())) {
-    setBirthTime(parsed);
-    setHourInput(String(parsed.getHours() % 12 || 12));
-    setMinuteInput(String(parsed.getMinutes()).padStart(2, "0"));
-    setSecondInput(String(parsed.getSeconds()).padStart(2, "0"));
-    setAmpm(parsed.getHours() >= 12 ? "PM" : "AM");
-  } else {
-    console.log("Invalid stored birthTime:", time);
-    setBirthTime(null);
-  }
-}
+      if (time) {
+        const parsed = new Date(time);
+        if (!isNaN(parsed.getTime())) {
+          setBirthTime(parsed);
+          setHourInput(String(parsed.getHours() % 12 || 12));
+          setMinuteInput(String(parsed.getMinutes()).padStart(2, "0"));
+          setSecondInput(String(parsed.getSeconds()).padStart(2, "0"));
+          setAmpm(parsed.getHours() >= 12 ? "PM" : "AM");
+        } else {
+          console.log("Invalid stored birthTime:", time);
+          setBirthTime(null);
+        }
+      }
 
       if (place) setBirthPlace(place);
     };
@@ -294,7 +298,7 @@ if (time) {
       if (step === 0 && userName)
         await AsyncStorage.setItem("userName", userName);
       if (step === 1 && birthDate)
-        await AsyncStorage.setItem("birthDate", birthDate.toISOString().split("T")[0]); 
+        await AsyncStorage.setItem("birthDate", birthDate.toISOString().split("T")[0]);
       if (step === 2 && birthTime)
         await AsyncStorage.setItem("birthTime", birthTime.toISOString());
       if (step === 3 && birthPlace)
@@ -323,311 +327,331 @@ if (time) {
     const dt = birthTime ? new Date(birthTime) : new Date();
     dt.setHours(hour24, m % 60, s % 60, 0);
     setBirthTime(dt);
-  }, [hourInput, minuteInput,secondInput, ampm]);
+  }, [hourInput, minuteInput, secondInput, ampm]);
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-    <LinearGradient colors={gradients.cosmic} style={styles.container}>
-      {/* Progress Bar */}
-      <View style={styles.progressBarContainer}>
-        <View
-          style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
-        />
-      </View>
-
-      {/* faint radial rim */}
-      <Animated.View
-        style={[
-          styles.rim,
-          {
-            opacity: glowInterp,
-            shadowRadius: glowInterp.interpolate({
-              inputRange: [0.12, 0.28],
-              outputRange: [20, 44],
-            }),
-          },
-        ]}
-        pointerEvents="none"
-      />
-
-      {/* drifting orbs */}
-      {orbs.map((val, i) => {
-        const left = (i + 1) * (width / (orbs.length + 1)) - 30;
-        const translateY = val.interpolate({
-          inputRange: [0, 1],
-          outputRange: [Math.sin(i) * 6, Math.cos(i) * -18],
-        });
-        const scale = val.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0.7, 1.1],
-        });
-        const opacity = val.interpolate({
-          inputRange: [0, 1],
-          outputRange: [0.12, 0.28],
-        });
-        return (
-          <Animated.View
-            key={`orb-${i}`}
-            style={[
-              styles.orb,
-              { left, transform: [{ translateY }, { scale }], opacity },
-            ]}
+      <LinearGradient colors={gradients.cosmic} style={styles.container}>
+        {/* Progress Bar */}
+        <View style={styles.progressBarContainer}>
+          <View
+            style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
           />
-        );
-      })}
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.centered}
-      >
-        {/* GUIDE CARD ROW */}
-        <View style={styles.guideRow}>
-          <Animated.View
-            style={[
-              styles.portraitWrap,
-              {
-                transform: [
-                  { translateY: bobInterp },
-                  {
-                    scale: bob.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 1.02],
-                    }),
-                  },
-                ],
-                shadowOpacity: 0.65,
-                shadowRadius: glowInterp.interpolate({
-                  inputRange: [0.12, 0.28],
-                  outputRange: [8, 24],
-                }),
-              },
-            ]}
-          >
-            <View style={styles.glowRing} />
-            <Image
-              source={resolvedSource}
-              onError={() => setImageError(true)}
-              onLoad={() => setImageError(false)}
-              style={styles.portrait}
-            />
-          </Animated.View>
-
-          <View style={styles.speechWrap}>
-            <View style={[glassStyle.shadowCard, styles.speechCard]}>
-              <Text style={[glassStyle.badgeText, { marginBottom: 8 }]}>
-                {savedGuide?.name ?? "Your Guide"}
-              </Text>
-              <Text style={[glassStyle.bodyText, { fontStyle: "italic" }]}>
-                {message}
-              </Text>
-              {imageError && (
-                <Text
-                  style={{
-                    color: colors.accent,
-                    marginTop: 6,
-                    fontSize: 12,
-                  }}
-                >
-                  (guide image not reachable — using placeholder)
-                </Text>
-              )}
-              {validatingRemote && (
-                <Text
-                  style={{
-                    color: colors.accent,
-                    marginTop: 6,
-                    fontSize: 12,
-                  }}
-                >
-                  (validating guide image...)
-                </Text>
-              )}
-            </View>
-          </View>
         </View>
 
-        {/* Headlines */}
-        {step === 0 && (
-          <Text style={[glassStyle.subHeader, styles.headline]}>
-            What name did the cosmos whisper for you?
-          </Text>
-        )}
-        {step === 1 && (
-          <Text style={[glassStyle.subHeader, styles.headline]}>
-            When did the cosmos{"\n"}choose your arrival?
-          </Text>
-        )}
-        {step === 2 && (
-          <Text style={[glassStyle.subHeader, styles.headline]}>
-            At what hour did the universe{"\n"}greet you?
-          </Text>
-        )}
-        {step === 3 && (
-          <Text style={[glassStyle.subHeader, styles.headline]}>
-            Where on Earth did the heavens{"\n"}place you?
-          </Text>
-        )}
-        {step === 4 && (
-          <View style={{ alignItems: "center", marginTop: 12 }}>
-    <Text style={[glassStyle.subHeader, styles.headline]}>
-      ✨ All your details are aligned ✨
-    </Text>
-
-    <View style={[glassStyle.card, { marginTop: 16, padding: 12, width: "100%" }]}>
-      <Text style={glassStyle.smbodyText}> Name: {userName}</Text>
-      <Text style={glassStyle.smbodyText}>
-        Birth Date:{" "}
-        {birthDate
-          ? birthDate.toLocaleDateString("en-US", {
-              weekday: "short",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })
-          : "Not set"}
-      </Text>
-      <Text style={glassStyle.smbodyText}>
-        Time:{" "}
-        {birthTime
-          ? birthTime.toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            })
-          : "Not set"}
-      </Text>
-      <Text style={glassStyle.smbodyText}>Place: {birthPlace || "Not set"}</Text>
-    </View>
-  </View>
-
-        )}
-
-        {/* Input Steps */}
-        {step === 0 && (
-          <View style={[styles.inputBlock, glassStyle.card]}>
-            <Text style={glassStyle.badgeText}>Enter Your Name</Text>
-            <View style={[glassStyle.input, { width: "100%", marginTop: 12 }]}>
-              <TextInput
-                placeholder="Your Name"
-                placeholderTextColor={colors.accent}
-                style={{ color: colors.white }}
-                value={userName}
-                onChangeText={setUserName}
-              />
-            </View>
-          </View>
-        )}
-
-{step === 1 && (
-  <View style={[styles.inputBlock, glassStyle.card]}>
-    <Text style={glassStyle.badgeText}>Select your Birth Date</Text>
-
-    <TouchableOpacity
-      style={[glassStyle.button, styles.inputButton]}
-      onPress={() => setShowDatePicker(true)}
-    >
-      <Ionicons name="calendar-outline" size={14} color={colors.white} />
-      <Text style={glassStyle.bodyText}>
-        {birthDate
-          ? new Intl.DateTimeFormat("en-US", {
-              weekday: "short",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            }).format(birthDate)
-          : "Tap to choose date"}
-      </Text>
-    </TouchableOpacity>
-
-{showDatePicker && (
-  <Modal transparent animationType="fade">
-    <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.3)" }}>
-      <View style={{ backgroundColor: colors.background }}>
-        {/* Done Button */}
-        <View style={{ flexDirection: "row", justifyContent: "flex-end", padding: 8 }}>
-          <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-            <Text style={{ color: colors.gold, fontWeight: "bold", fontSize: 16 }}>Done</Text>
-          </TouchableOpacity>
-        </View>
-
-        <DateTimePicker
-          value={birthDate || new Date()}
-          mode="date"
-          display="spinner"
-          onChange={(event, selectedDate) => {
-            if (selectedDate) setBirthDate(selectedDate);
-            // Don't close picker on scroll, only on Done
-          }}
-          style={{ backgroundColor: colors.background }}
+        {/* faint radial rim */}
+        <Animated.View
+          style={[
+            styles.rim,
+            {
+              opacity: glowInterp,
+              shadowRadius: glowInterp.interpolate({
+                inputRange: [0.12, 0.28],
+                outputRange: [20, 44],
+              }),
+            },
+          ]}
+          pointerEvents="none"
         />
-      </View>
-    </View>
-  </Modal>
-)}
+
+        {/* drifting orbs */}
+        {orbs.map((val, i) => {
+          const left = (i + 1) * (width / (orbs.length + 1)) - 30;
+          const translateY = val.interpolate({
+            inputRange: [0, 1],
+            outputRange: [Math.sin(i) * 6, Math.cos(i) * -18],
+          });
+          const scale = val.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.7, 1.1],
+          });
+          const opacity = val.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0.12, 0.28],
+          });
+          return (
+            <Animated.View
+              key={`orb-${i}`}
+              style={[
+                styles.orb,
+                { left, transform: [{ translateY }, { scale }], opacity },
+              ]}
+            />
+          );
+        })}
+
+        <KeyboardAwareScrollView
+          enableOnAndroid
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.centered}
+          extraScrollHeight={-80}
+
+        >
 
 
-  </View>
-)}
 
-
-        {step === 2 && (
-          <View style={[styles.inputBlock, glassStyle.card]}>
-            <Text style={glassStyle.badgeText}>Enter your Birth Time</Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginTop: 12,
-              }}
+          {/* GUIDE CARD ROW */}
+          <View style={styles.guideRow}>
+            <Animated.View
+              style={[
+                styles.portraitWrap,
+                {
+                  transform: [
+                    { translateY: bobInterp },
+                    {
+                      scale: bob.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [1, 1.02],
+                      }),
+                    },
+                  ],
+                  shadowOpacity: 0.65,
+                  shadowRadius: glowInterp.interpolate({
+                    inputRange: [0.12, 0.28],
+                    outputRange: [8, 24],
+                  }),
+                },
+              ]}
             >
-              {/* Hour Input */}
-              <View style={[glassStyle.input, { width: 80, marginRight: 2 }]}>
-                <TextInput
-                  placeholder="HH"
-                  placeholderTextColor={colors.accent}
-                  style={{ color: colors.white, textAlign: "center" }}
-                  keyboardType="numeric"
-                  maxLength={2}
-                  value={hourInput}
-                  onChangeText={setHourInput}
-                />
-              </View>
+              <View style={styles.glowRing} />
+              <Image
+                source={resolvedSource}
+                onError={() => setImageError(true)}
+                onLoad={() => setImageError(false)}
+                style={styles.portrait}
+              />
+            </Animated.View>
 
-              <Text style={[glassStyle.bodyText, { marginHorizontal: 4 }]}>
-                :
+            <View style={styles.speechWrap}>
+              <View style={[glassStyle.shadowCard, styles.speechCard]}>
+                <Text style={[glassStyle.badgeText, { marginBottom: 8 }]}>
+                  {savedGuide?.name ?? "Your Guide"}
+                </Text>
+                <Text style={[glassStyle.bodyText, { fontStyle: "italic" }]}>
+                  {message}
+                </Text>
+                {imageError && (
+                  <Text
+                    style={{
+                      color: colors.accent,
+                      marginTop: 6,
+                      fontSize: 12,
+                    }}
+                  >
+                    (guide image not reachable — using placeholder)
+                  </Text>
+                )}
+                {validatingRemote && (
+                  <Text
+                    style={{
+                      color: colors.accent,
+                      marginTop: 6,
+                      fontSize: 12,
+                    }}
+                  >
+                    (validating guide image...)
+                  </Text>
+                )}
+              </View>
+            </View>
+          </View>
+
+          {/* Headlines */}
+          {step === 0 && (
+            <Text style={[glassStyle.subHeader, styles.headline]}>
+              What name did the cosmos whisper for you?
+            </Text>
+          )}
+          {step === 1 && (
+            <Text style={[glassStyle.subHeader, styles.headline]}>
+              When did the cosmos{"\n"}choose your arrival?
+            </Text>
+          )}
+          {step === 2 && (
+            <Text style={[glassStyle.subHeader, styles.headline]}>
+              At what hour did the universe{"\n"}greet you?
+            </Text>
+          )}
+          {step === 3 && (
+            <Text style={[glassStyle.subHeader, styles.headline]}>
+              Where on Earth did the heavens{"\n"}place you?
+            </Text>
+          )}
+          {step === 4 && (
+            <View style={{ alignItems: "center", marginTop: 12 }}>
+              <Text style={[glassStyle.subHeader, styles.headline]}>
+                ✨ All your details are aligned ✨
               </Text>
 
-              {/* Minute Input */}
-              <View style={[glassStyle.input, { width: 80, marginRight: 2 }]}>
-                <TextInput
-                  placeholder="MM"
-                  placeholderTextColor={colors.accent}
-                  style={{ color: colors.white, textAlign: "center" }}
-                  keyboardType="numeric"
-                  maxLength={2}
-                  value={minuteInput}
-                  onChangeText={setMinuteInput}
-                />
+              <View style={[glassStyle.card, { marginTop: 16, padding: 12, width: "100%" }]}>
+                <Text style={glassStyle.smbodyText}> Name: {userName}</Text>
+                <Text style={glassStyle.smbodyText}>
+                  Birth Date:{" "}
+                  {birthDate
+                    ? birthDate.toLocaleDateString("en-US", {
+                      weekday: "short",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                    : "Not set"}
+                </Text>
+                <Text style={glassStyle.smbodyText}>
+                  Time:{" "}
+                  {birthTime
+                    ? birthTime.toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })
+                    : "Not set"}
+                </Text>
+                <Text style={glassStyle.smbodyText}>Place: {birthPlace || "Not set"}</Text>
               </View>
-
-              {/* Second Input */}
-              <View style={[glassStyle.input, { width: 80, marginRight: 2 }]}>
-                <TextInput
-                  placeholder="SS"
-                  placeholderTextColor={colors.accent}
-                  style={{ color: colors.white, textAlign: "center" }}
-                  keyboardType="numeric"
-                  maxLength={2}
-                  value={secondInput}
-                  onChangeText={setSecondInput}
-                />
-              </View>
-
-              
             </View>
-            {/* AM/PM Toggle  */}
+
+          )}
+
+          {/* Input Steps */}
+          {step === 0 && (
+            <View style={[styles.inputBlock, glassStyle.card]}>
+              <Text style={glassStyle.badgeText}>Enter Your Name</Text>
+              <View style={[glassStyle.input, { width: "100%", marginTop: 12 }]}>
+                <TextInput
+                  placeholder="Your Name"
+                  placeholderTextColor={colors.accent}
+                  style={{ color: colors.white }}
+                  value={userName}
+                  onChangeText={setUserName}
+                />
+              </View>
+            </View>
+          )}
+
+          {step === 1 && (
+            <View style={[styles.inputBlock, glassStyle.card]}>
+              <Text style={glassStyle.badgeText}>Select your Birth Date</Text>
+
+              <TouchableOpacity
+                style={[glassStyle.button, styles.inputButton]}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Ionicons name="calendar-outline" size={14} color={colors.white} />
+                <Text style={glassStyle.bodyText}>
+                  {birthDate
+                    ? new Intl.DateTimeFormat("en-US", {
+                      weekday: "short",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }).format(birthDate)
+                    : "Tap to choose date"}
+                </Text>
+              </TouchableOpacity>
+
+              {showDatePicker && (
+                Platform.OS === "ios" ? (
+                  <Modal transparent animationType="fade">
+                    <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.3)" }}>
+                      <View style={{ backgroundColor: colors.background }}>
+                        <View style={{ flexDirection: "row", justifyContent: "flex-end", padding: 8 }}>
+                          <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                            <Text style={{ color: colors.gold, fontWeight: "bold", fontSize: 16 }}>
+                              Done
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+
+                        <DateTimePicker
+                          value={birthDate || new Date()}
+                          mode="date"
+                          display="spinner"
+                          onChange={(event, selectedDate) => {
+                            if (selectedDate) setBirthDate(selectedDate);
+                          }}
+                        />
+                      </View>
+                    </View>
+                  </Modal>
+                ) : (
+                  <DateTimePicker
+                    value={birthDate || new Date()}
+                    mode="date"
+                    display="spinner"
+                    onChange={(event, selectedDate) => {
+                      setShowDatePicker(false); // REQUIRED for Android
+                      if (event.type === "set" && selectedDate) {
+                        setBirthDate(selectedDate);
+                      }
+                    }}
+                  />
+                )
+              )}
+
+
+
+            </View>
+          )}
+
+
+          {step === 2 && (
+            <View style={[styles.inputBlock, glassStyle.card]}>
+              <Text style={glassStyle.badgeText}>Enter your Birth Time</Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginTop: 12,
+                }}
+              >
+                {/* Hour Input */}
+                <View style={[glassStyle.input, { width: 80, marginRight: 2 }]}>
+                  <TextInput
+                    placeholder="HH"
+                    placeholderTextColor={colors.accent}
+                    style={{ color: colors.white, textAlign: "center" }}
+                    keyboardType="numeric"
+                    maxLength={2}
+                    value={hourInput}
+                    onChangeText={setHourInput}
+                  />
+                </View>
+
+                <Text style={[glassStyle.bodyText, { marginHorizontal: 4 }]}>
+                  :
+                </Text>
+
+                {/* Minute Input */}
+                <View style={[glassStyle.input, { width: 80, marginRight: 2 }]}>
+                  <TextInput
+                    placeholder="MM"
+                    placeholderTextColor={colors.accent}
+                    style={{ color: colors.white, textAlign: "center" }}
+                    keyboardType="numeric"
+                    maxLength={2}
+                    value={minuteInput}
+                    onChangeText={setMinuteInput}
+                  />
+                </View>
+
+                {/* Second Input */}
+                <View style={[glassStyle.input, { width: 80, marginRight: 2 }]}>
+                  <TextInput
+                    placeholder="SS"
+                    placeholderTextColor={colors.accent}
+                    style={{ color: colors.white, textAlign: "center" }}
+                    keyboardType="numeric"
+                    maxLength={2}
+                    value={secondInput}
+                    onChangeText={setSecondInput}
+                  />
+                </View>
+
+
+              </View>
+              {/* AM/PM Toggle  */}
               <View style={[glassStyle.input, { width: 100 }]}>
-               {/* <Text style={{color: colors.white, textAlign: "center",marginVertical: 6, }}>{ampm}</Text> */}
+                {/* <Text style={{color: colors.white, textAlign: "center",marginVertical: 6, }}>{ampm}</Text> */}
                 <View
                   style={{
                     flexDirection: "row",
@@ -647,44 +671,44 @@ if (time) {
                   </TouchableOpacity>
                 </View>
               </View>
-          </View>
-        )}
-
-        {step === 3 && (
-          <View style={[styles.inputBlock, glassStyle.card]}>
-            <Text style={glassStyle.badgeText}>Enter your Birth Place</Text>
-            <View style={[glassStyle.input, { width: "100%", marginTop: 12 }]}>
-              <TextInput
-                placeholder="City / Town"
-                placeholderTextColor={colors.accent}
-                style={{ color: colors.white }}
-                value={birthPlace}
-                onChangeText={setBirthPlace}
-              />
             </View>
-          </View>
-        )}
+          )}
 
-        {/* Action Button */}
-        <TouchableOpacity
-          style={[glassStyle.button, { marginTop: 20 }]}
-          onPress={async () => {
-            Keyboard.dismiss();
-            await saveStepData();
-            if (step < 4) {
-              setStep(step + 1);
-            } else {
-              router.push("./StarRevealScreen");
-            }
-          }}
-        >
-          <Text style={glassStyle.buttonText}>
-            {step < 4 ? "Next" : "Reveal My Stars"}
-          </Text>
-        </TouchableOpacity>
-      </KeyboardAvoidingView>
-    </LinearGradient>
-  </TouchableWithoutFeedback>
+          {step === 3 && (
+            <View style={[styles.inputBlock, glassStyle.card]}>
+              <Text style={glassStyle.badgeText}>Enter your Birth Place</Text>
+              <View style={[glassStyle.input, { width: "100%", marginTop: 12 }]}>
+                <TextInput
+                  placeholder="City / Town"
+                  placeholderTextColor={colors.accent}
+                  style={{ color: colors.white }}
+                  value={birthPlace}
+                  onChangeText={setBirthPlace}
+                />
+              </View>
+            </View>
+          )}
+
+          {/* Action Button */}
+          <TouchableOpacity
+            style={[glassStyle.button, { marginTop: 20 }]}
+            onPress={async () => {
+              Keyboard.dismiss();
+              await saveStepData();
+              if (step < 4) {
+                setStep(step + 1);
+              } else {
+                router.push("./StarRevealScreen");
+              }
+            }}
+          >
+            <Text style={glassStyle.buttonText}>
+              {step < 4 ? "Next" : "Reveal My Stars"}
+            </Text>
+          </TouchableOpacity>
+        </KeyboardAwareScrollView>
+      </LinearGradient>
+    </TouchableWithoutFeedback>
   );
 }
 export const styles = StyleSheet.create({
@@ -812,5 +836,5 @@ export const styles = StyleSheet.create({
     backgroundColor: "rgba(255,240,200,0.08)",
     borderWidth: 0,
   },
-  
+
 });
