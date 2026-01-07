@@ -25,7 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ALL_GUIDES, Guide as GuideType } from "../../data/guides";
 import { colors, spacing } from "../../theme";
 
-const getGeminiKey = () => process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
+const getGeminiKey = () => process.env.EXPO_PUBLIC_GEMINI_API_KEY || "AIzaSyD4Xj4GBoJG5BsWoOUE0n7H_vc_IyqLgVU";
 const MODEL = "gemini-2.5-flash";
 
 const USER_AVATAR = require("../../assets/images/user.png");

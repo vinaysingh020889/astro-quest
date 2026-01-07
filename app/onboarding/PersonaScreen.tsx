@@ -26,7 +26,7 @@ import { ALL_GUIDES } from "../../data/guides";
 import { colors, glassStyle, gradients, spacing } from "../../theme";
 
 const { width, height } = Dimensions.get("window");
-const getGeminiKey = () => process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
+const getGeminiKey = () => process.env.EXPO_PUBLIC_GEMINI_API_KEY || "AIzaSyD4Xj4GBoJG5BsWoOUE0n7H_vc_IyqLgVU";
 
 
 const makeId = (prefix = "id") =>
@@ -169,41 +169,57 @@ export default function PersonaScreen() {
     AsyncStorage.getItem("userName").then((n) => n && setUserName(n));
   }, []);
   useEffect(() => {
-  (async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status === "granted") {
-      const loc = await Location.getCurrentPositionAsync({});
-      setLocation({ lat: loc.coords.latitude, lon: loc.coords.longitude });
-    } else {
-      console.warn("Location permission not granted");
-    }
-  })();
-}, []);
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === "granted") {
+        const loc = await Location.getCurrentPositionAsync({});
+        setLocation({ lat: loc.coords.latitude, lon: loc.coords.longitude });
+      } else {
+        console.warn("Location permission not granted");
+      }
+    })();
+  }, []);
 
 
-// Load predictions + greeting once (avoid React 18 double-run in dev)
-useEffect(() => {
-  let isMounted = true; // cleanup guard
+  // Load predictions + greeting once (avoid React 18 double-run in dev)
+  useEffect(() => {
+    let isMounted = true; // cleanup guard
 
-  const loadPredictions = async () => {
-    if (!isMounted) return;
-    const stored = await AsyncStorage.getItem("userPredictions");
+    const loadPredictions = async () => {
+      if (!isMounted) return;
+      const stored = await AsyncStorage.getItem("userPredictions");
 
-    if (stored) {
-      const parsed = JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
 
-      parsed.forEach((p: string, idx: number) => {
+        parsed.forEach((p: string, idx: number) => {
+          setTimeout(() => {
+            if (!isMounted) return;
+            setMessages((prev) => [
+              ...prev,
+              { id: makeId("msg"), type: "guide", text: `🔮 ${p}` },
+            ]);
+          }, idx * 2000);
+        });
+
         setTimeout(() => {
           if (!isMounted) return;
-          setMessages((prev) => [
-            ...prev,
-            { id: makeId("msg"), type: "guide", text: `🔮 ${p}` },
-          ]);
-        }, idx * 2000);
-      });
-
-      setTimeout(() => {
-        if (!isMounted) return;
+          const greet = [
+            `✨ Hi ${userName}, I am your cosmic guide.`,
+            "What is on your mind today? Ask me, I will use Prashna Kundali to answer your query! While asking the query please note give me exact location and time from where and when are you asking the question.",
+          ];
+          greet.forEach((line, i) => {
+            setTimeout(() => {
+              if (!isMounted) return;
+              setMessages((prev) => [
+                ...prev,
+                { id: makeId("msg"), type: "guide", text: line },
+              ]);
+              if (i === greet.length - 1) setInputVisible(true);
+            }, i * 2500);
+          });
+        }, parsed.length * 2000 + 500);
+      } else {
         const greet = [
           `✨ Hi ${userName}, I am your cosmic guide.`,
           "What is on your mind today? Ask me, I will use Prashna Kundali to answer your query! While asking the query please note give me exact location and time from where and when are you asking the question.",
@@ -218,34 +234,18 @@ useEffect(() => {
             if (i === greet.length - 1) setInputVisible(true);
           }, i * 2500);
         });
-      }, parsed.length * 2000 + 500);
-    } else {
-      const greet = [
-        `✨ Hi ${userName}, I am your cosmic guide.`,
-        "What is on your mind today? Ask me, I will use Prashna Kundali to answer your query! While asking the query please note give me exact location and time from where and when are you asking the question.",
-      ];
-      greet.forEach((line, i) => {
-        setTimeout(() => {
-          if (!isMounted) return;
-          setMessages((prev) => [
-            ...prev,
-            { id: makeId("msg"), type: "guide", text: line },
-          ]);
-          if (i === greet.length - 1) setInputVisible(true);
-        }, i * 2500);
-      });
-    }
-  };
+      }
+    };
 
-  loadPredictions();
+    loadPredictions();
 
-  return () => {
-    isMounted = false; // cleanup stops double execution
-  };
-}, [userName]);
+    return () => {
+      isMounted = false; // cleanup stops double execution
+    };
+  }, [userName]);
 
 
- 
+
 
   // Auto-scroll chat
   useEffect(() => {
@@ -253,37 +253,37 @@ useEffect(() => {
   }, [messages]);
 
   // Send user input
-const sendUserQuery = async () => {
-  if (!userInput.trim()) return;
+  const sendUserQuery = async () => {
+    if (!userInput.trim()) return;
 
-  const query = userInput.trim();
+    const query = userInput.trim();
 
-  // show user message
-  setMessages((prev) => [...prev, { id: makeId("msg"), type: "user", text: query }]);
-  setUserInput("");
-  setInputVisible(false);
-  setLoading(true);
+    // show user message
+    setMessages((prev) => [...prev, { id: makeId("msg"), type: "user", text: query }]);
+    setUserInput("");
+    setInputVisible(false);
+    setLoading(true);
 
-  const GEMINI_API_KEY = getGeminiKey();
+    const GEMINI_API_KEY = getGeminiKey();
 
-  // 🔒 KEY CHECK
-  if (!GEMINI_API_KEY) {
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: makeId("msg"),
-        type: "guide",
-        text: "⚠️ Gemini API key missing. Add EXPO_PUBLIC_GEMINI_API_KEY and restart Expo.",
-      },
-    ]);
-    setLoading(false);
-    setInputVisible(true);
-    return;
-  }
+    // 🔒 KEY CHECK
+    if (!GEMINI_API_KEY) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: makeId("msg"),
+          type: "guide",
+          text: "⚠️ Gemini API key missing. Add EXPO_PUBLIC_GEMINI_API_KEY and restart Expo.",
+        },
+      ]);
+      setLoading(false);
+      setInputVisible(true);
+      return;
+    }
 
-  const now = new Date().toISOString();
+    const now = new Date().toISOString();
 
-  const prompt = `
+    const prompt = `
 You are a highly respected Indian Vedic astrologer, deeply skilled in Prashna Kundali (Horary Astrology).
 
 Respond in 1–2 sentences only.
@@ -294,51 +294,52 @@ Time of asking: ${now}
 Location: ${location ? `Lat ${location.lat}, Lon ${location.lon}` : "Unknown"}
 `;
 
-  try {
-    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+    try {
+      const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: prompt }],
-        },
-      ],
-    });
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: prompt }],
+          },
+        ],
+      });
 
-    const text =
-      response.text?.trim() ||
-      "The stars are silent right now. Please try again shortly.";
+      const text =
+        response.text?.trim() ||
+        "The stars are silent right now. Please try again shortly.";
 
-    const newMessage = { id: makeId("msg"), type: "guide", text };
-    setMessages((prev) => [...prev, newMessage]);
+      const newMessage = { id: makeId("msg"), type: "guide", text };
+      setMessages((prev) => [...prev, newMessage]);
 
-    // persist predictions
-    const prevRaw = await AsyncStorage.getItem("userPredictions");
-    const prev = prevRaw ? JSON.parse(prevRaw) : [];
-    prev.push(text);
-    await AsyncStorage.setItem("userPredictions", JSON.stringify(prev));
+      // persist predictions
+      const prevRaw = await AsyncStorage.getItem("userPredictions");
+      const prev = prevRaw ? JSON.parse(prevRaw) : [];
+      prev.push(text);
+      await AsyncStorage.setItem("userPredictions", JSON.stringify(prev));
 
-    setTimeout(() => setCtaVisible(true), 500);
-  } catch (err) {
-    console.error("Gemini error:", err);
-    setMessages((prev) => [
-      ...prev,
-      { id: makeId("msg"), type: "guide", text: "I am unable to read the stars right now." },
-    ]);
-  } finally {
-    setLoading(false);
-    setInputVisible(true);
-  }
-};
+      setTimeout(() => setCtaVisible(true), 500);
+    } catch (err) {
+      console.error("Gemini error:", err);
+      setMessages((prev) => [
+        ...prev,
+        { id: makeId("msg"), type: "guide", text: "I am unable to read the stars right now." },
+      ]);
+    } finally {
+      setLoading(false);
+      setInputVisible(true);
+    }
+  };
 
 
 
   // Finish onboarding
+
   const finishOnboarding = async () => {
     await AsyncStorage.setItem("hasOnboarded", "true");
-    router.replace("../(tabs)/Chat");
+    router.replace("/auth/login");
   };
 
   return (

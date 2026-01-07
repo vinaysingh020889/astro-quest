@@ -27,7 +27,7 @@ type GuideData = {
 };
 
 // ----- DIRECTLY DECLARE YOUR GEMINI KEY HERE -----
-const getGeminiKey = () => process.env.EXPO_PUBLIC_GEMINI_API_KEY || "";
+const getGeminiKey = () => process.env.EXPO_PUBLIC_GEMINI_API_KEY || "AIzaSyD4Xj4GBoJG5BsWoOUE0n7H_vc_IyqLgVU";
 
 export default function StarRevealScreen() {
   const router = useRouter();
