@@ -1,4 +1,3 @@
-// login.tsx
 import Toast from 'react-native-toast-message';
 import React, { useState } from "react";
 import {
@@ -36,7 +35,6 @@ const showError = (message: string) => {
 const validateEmailOrMobile = (value: string): string | null => {
   const trimmed = value.trim();
 
-  // Mobile number case
   if (/^\d+$/.test(trimmed)) {
     if (trimmed.length !== 10) {
       return "Please enter a valid Phone Number";
@@ -44,7 +42,6 @@ const validateEmailOrMobile = (value: string): string | null => {
     return null;
   }
 
-  // Gmail validation
   const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
   if (!gmailRegex.test(trimmed)) {
     return "Please enter a valid Gmail";
@@ -77,6 +74,9 @@ export default function LoginScreen() {
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // 🔐 TEMP OTP DISPLAY (FOR TESTING ONLY)
+  const [debugOtp, setDebugOtp] = useState<string | null>(null);
+
   const sendOtp = async () => {
     if (!identifier.trim()) {
       showError("Enter email or mobile number");
@@ -98,11 +98,12 @@ export default function LoginScreen() {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.message || "OTP failed");
 
       setOtpSent(true);
+      setDebugOtp(data.otp?.toString() || null); // 👈 TEMP OTP POP
       showSuccess("OTP Sent", "Please check your email");
+
     } catch (err: any) {
       showError(err.message || "Server not reachable");
     } finally {
@@ -125,7 +126,6 @@ export default function LoginScreen() {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.message || "Invalid OTP");
 
       showSuccess("Login Success 🎉", "Welcome to Astro-Quest");
@@ -139,7 +139,6 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 🔮 GLASS CARD */}
       <View style={styles.card}>
         <Text style={styles.title}>Login</Text>
         <Text style={styles.subtitle}>Enter the cosmos ✨</Text>
@@ -152,6 +151,13 @@ export default function LoginScreen() {
           autoCapitalize="none"
           style={styles.input}
         />
+
+        {debugOtp && otpSent && (
+          <View style={styles.debugOtpBox}>
+            <Text style={styles.debugOtpTitle}>DEBUG OTP</Text>
+            <Text style={styles.debugOtpValue}>{debugOtp}</Text>
+          </View>
+        )}
 
         {otpSent && (
           <TextInput
@@ -197,7 +203,6 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     paddingVertical: 32,
     paddingHorizontal: 22,
-
     shadowColor: "#7A2BFF",
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.45,
@@ -265,6 +270,29 @@ const styles = StyleSheet.create({
   toastText: {
     color: '#E0E7FF',
     fontSize: 13,
+    marginTop: 4,
+  },
+
+  // 🔐 TEMP OTP BOX
+  debugOtpBox: {
+    backgroundColor: "#0A1AFF",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    marginBottom: 14,
+    alignItems: "center",
+  },
+  debugOtpTitle: {
+    color: "#E0E7FF",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  debugOtpValue: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "700",
+    letterSpacing: 4,
     marginTop: 4,
   },
 });

@@ -47,6 +47,7 @@ export const sendOtpController = async (req: Request, res: Response) => {
 
     return res.json({
       message: "OTP sent successfully",
+      otp, // 👈 TEMP: expose OTP for frontend
     });
   } catch (error) {
     console.error(error);

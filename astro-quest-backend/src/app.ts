@@ -1,25 +1,16 @@
 import express from "express";
-import cors from "cors";
-import authRoutes from "./auth/auth.routes";
-import Toast from 'react-native-toast-message';
+import chatRoutes from "./chat/chat.routes";
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// 🔥 THIS LINE WAS MISSING OR MOVED
 app.use(express.json());
-app.use("/auth", authRoutes);
 
-// Health check
-app.get("/", (req, res) => {
-  res.json({
-    status: "OK",
-    message: "Astro-Quest Backend is running 🚀",
-  });
-});
+// (optional but safe)
+app.use(express.urlencoded({ extended: true }));
+
+// routes AFTER this
+app.use("/api/chat", chatRoutes);
 
 export default app;
-
-
-
 
