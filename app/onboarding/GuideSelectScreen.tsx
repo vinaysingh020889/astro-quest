@@ -1,3 +1,4 @@
+// app / onboarding/ GuideSelected.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage"; // ✅ Added
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";

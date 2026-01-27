@@ -1,4 +1,7 @@
 import Toast from 'react-native-toast-message';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+
 import React, { useState } from "react";
 import {
   StyleSheet,
@@ -10,7 +13,7 @@ import {
 import { useRouter } from "expo-router";
 
 // ⚠️ USE MAC IP, NOT localhost
-const API_BASE = "http://192.168.1.7:5050";
+const API_BASE = "http://192.168.1.50:5050";
 
 /* 🔹 helper functions (ONLY ADDED, nothing removed) */
 const showSuccess = (title: string, message: string) => {
@@ -111,6 +114,7 @@ export default function LoginScreen() {
     }
   };
 
+
   const verifyOtp = async () => {
     if (!otp.trim()) {
       showError("Enter OTP");
@@ -119,14 +123,25 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
+      const tempOnboardingId = await AsyncStorage.getItem("tempOnboardingId");
+      console.log("🧩 tempOnboardingId from AsyncStorage:", tempOnboardingId);
+
       const res = await fetch(`${API_BASE}/auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: identifier, otp }),
+        body: JSON.stringify({
+          email: identifier,
+          otp,
+          tempOnboardingId, // 🔥 THIS IS THE FIX
+        }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Invalid OTP");
+
+      await AsyncStorage.setItem("authToken", data.token);
+      // ✅ ADD THIS LINE (VERY IMPORTANT)
+      await AsyncStorage.setItem("userId", data.userId);
 
       showSuccess("Login Success 🎉", "Welcome to Astro-Quest");
       router.replace("/(tabs)");
@@ -136,6 +151,7 @@ export default function LoginScreen() {
       setLoading(false);
     }
   };
+
 
   return (
     <View style={styles.container}>

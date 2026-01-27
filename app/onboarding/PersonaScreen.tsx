@@ -5,7 +5,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-
 import {
   ActivityIndicator,
   Animated,
@@ -26,11 +25,15 @@ import { ALL_GUIDES } from "../../data/guides";
 import { colors, glassStyle, gradients, spacing } from "../../theme";
 
 const { width, height } = Dimensions.get("window");
-const getGeminiKey = () => process.env.EXPO_PUBLIC_GEMINI_API_KEY || "AIzaSyD4Xj4GBoJG5BsWoOUE0n7H_vc_IyqLgVU";
 
+const getGeminiKey = () =>
+  process.env.EXPO_PUBLIC_GEMINI_API_KEY ||
+  "AIzaSyD4Xj4GBoJG5BsWoOUE0n7H_vc_IyqLgVU";
 
 const makeId = (prefix = "id") =>
-  `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
+  `${prefix}_${Date.now().toString(36)}_${Math.random()
+    .toString(36)
+    .slice(2, 9)}`;
 
 /* ---------------- SparkleLayer ---------------- */
 function SparkleLayer() {
@@ -45,39 +48,73 @@ function SparkleLayer() {
       size: 2 + Math.random() * 3,
       duration: 2500 + Math.random() * 2500,
     }));
-    animRefs.current = sparklesRef.current.map(() => new Animated.Value(Math.random()));
+    animRefs.current = sparklesRef.current.map(
+      () => new Animated.Value(Math.random())
+    );
   }
 
   useEffect(() => {
     const animations = animRefs.current.map((anim, idx) =>
       Animated.loop(
         Animated.sequence([
-          Animated.timing(anim, { toValue: 1, duration: sparklesRef.current![idx].duration, useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0, duration: sparklesRef.current![idx].duration, useNativeDriver: true }),
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: sparklesRef.current![idx].duration,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: sparklesRef.current![idx].duration,
+            useNativeDriver: true,
+          }),
         ])
       )
     );
     animations.forEach((a) => a.start());
-    return () => animRefs.current.forEach((a) => a.stopAnimation?.());
+    return () =>
+      animRefs.current.forEach((a) => a.stopAnimation?.());
   }, []);
 
   return (
     <View style={StyleSheet.absoluteFill}>
       {sparklesRef.current.map((s, idx) => {
-        const opacity = animRefs.current[idx].interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] });
+        const opacity = animRefs.current[idx].interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.3, 1],
+        });
         return (
           <Animated.View
             key={s.id}
-            style={{ position: "absolute", left: s.left, top: s.top, opacity, transform: [{ scale: 1 + Math.random() * 0.3 }] }}
+            style={{
+              position: "absolute",
+              left: s.left,
+              top: s.top,
+              opacity,
+              transform: [{ scale: 1 + Math.random() * 0.3 }],
+            }}
           >
-            <View style={{ width: s.size, height: s.size, backgroundColor: "white", borderRadius: s.size / 2 }} />
+            <View
+              style={{
+                width: s.size,
+                height: s.size,
+                backgroundColor: "white",
+                borderRadius: s.size / 2,
+              }}
+            />
           </Animated.View>
         );
       })}
-
       <Image
         source={require("../../assets/images/halfmoon.png")}
-        style={{ position: "absolute", top: height * 0.1, right: width * 0.15, width: 120, height: 120, resizeMode: "contain", opacity: 0.6 }}
+        style={{
+          position: "absolute",
+          top: height * 0.1,
+          right: width * 0.15,
+          width: 120,
+          height: 120,
+          resizeMode: "contain",
+          opacity: 0.6,
+        }}
       />
     </View>
   );
@@ -90,8 +127,17 @@ function MessageBubble({ item }: { item: any }) {
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(slideAnim, { toValue: 0, duration: 500, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
     ]).start();
   }, []);
 
@@ -101,7 +147,10 @@ function MessageBubble({ item }: { item: any }) {
       style={[
         styles.messageBubble,
         item.type === "guide" ? styles.guideBubble : styles.userBubble,
-        { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        },
       ]}
     >
       <Text style={styles.messageText}>{item.text}</Text>
@@ -120,6 +169,8 @@ export default function PersonaScreen() {
   const [inputVisible, setInputVisible] = useState(false);
   const [ctaVisible, setCtaVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
 
   const glowAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -128,8 +179,16 @@ export default function PersonaScreen() {
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(glowAnim, { toValue: 1, duration: 2000, useNativeDriver: false }),
-        Animated.timing(glowAnim, { toValue: 0, duration: 2000, useNativeDriver: false }),
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: false,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 2000,
+          useNativeDriver: false,
+        }),
       ])
     ).start();
   }, []);
@@ -139,14 +198,25 @@ export default function PersonaScreen() {
     if (ctaVisible) {
       Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.05, duration: 1200, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
         ])
       ).start();
     }
   }, [ctaVisible]);
 
-  const avatarGlow = glowAnim.interpolate({ inputRange: [0, 1], outputRange: ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.6)"] });
+  const avatarGlow = glowAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.6)"],
+  });
 
   // Load guide
   useEffect(() => {
@@ -162,24 +232,31 @@ export default function PersonaScreen() {
 
   // Load user name
   const [userName, setUserName] = useState("Traveler");
-  const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
-  const [currentTime, setCurrentTime] = useState<string>(new Date().toISOString());
+  const [location, setLocation] = useState<{ lat: number; lon: number } | null>(
+    null
+  );
+  const [currentTime, setCurrentTime] = useState<string>(
+    new Date().toISOString()
+  );
 
   useEffect(() => {
     AsyncStorage.getItem("userName").then((n) => n && setUserName(n));
   }, []);
+
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === "granted") {
         const loc = await Location.getCurrentPositionAsync({});
-        setLocation({ lat: loc.coords.latitude, lon: loc.coords.longitude });
+        setLocation({
+          lat: loc.coords.latitude,
+          lon: loc.coords.longitude,
+        });
       } else {
         console.warn("Location permission not granted");
       }
     })();
   }, []);
-
 
   // Load predictions + greeting once (avoid React 18 double-run in dev)
   useEffect(() => {
@@ -187,11 +264,10 @@ export default function PersonaScreen() {
 
     const loadPredictions = async () => {
       if (!isMounted) return;
-      const stored = await AsyncStorage.getItem("userPredictions");
 
+      const stored = await AsyncStorage.getItem("userPredictions");
       if (stored) {
         const parsed = JSON.parse(stored);
-
         parsed.forEach((p: string, idx: number) => {
           setTimeout(() => {
             if (!isMounted) return;
@@ -238,14 +314,10 @@ export default function PersonaScreen() {
     };
 
     loadPredictions();
-
     return () => {
       isMounted = false; // cleanup stops double execution
     };
   }, [userName]);
-
-
-
 
   // Auto-scroll chat
   useEffect(() => {
@@ -259,7 +331,11 @@ export default function PersonaScreen() {
     const query = userInput.trim();
 
     // show user message
-    setMessages((prev) => [...prev, { id: makeId("msg"), type: "user", text: query }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: makeId("msg"), type: "user", text: query },
+    ]);
+
     setUserInput("");
     setInputVisible(false);
     setLoading(true);
@@ -282,17 +358,13 @@ export default function PersonaScreen() {
     }
 
     const now = new Date().toISOString();
-
-    const prompt = `
-You are a highly respected Indian Vedic astrologer, deeply skilled in Prashna Kundali (Horary Astrology).
-
-Respond in 1–2 sentences only.
-Be precise, calm, spiritual, and confident.
+    const prompt = `You are a highly respected Indian Vedic astrologer, deeply skilled in Prashna Kundali (Horary Astrology).
+Respond in 1–2 sentences only. Be precise, calm, spiritual, and confident.
 
 Question: ${query}
 Time of asking: ${now}
-Location: ${location ? `Lat ${location.lat}, Lon ${location.lon}` : "Unknown"}
-`;
+Location: ${location ? `Lat ${location.lat}, Lon ${location.lon}` : "Unknown"
+      }`;
 
     try {
       const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
@@ -318,14 +390,21 @@ Location: ${location ? `Lat ${location.lat}, Lon ${location.lon}` : "Unknown"}
       const prevRaw = await AsyncStorage.getItem("userPredictions");
       const prev = prevRaw ? JSON.parse(prevRaw) : [];
       prev.push(text);
-      await AsyncStorage.setItem("userPredictions", JSON.stringify(prev));
+      await AsyncStorage.setItem(
+        "userPredictions",
+        JSON.stringify(prev)
+      );
 
       setTimeout(() => setCtaVisible(true), 500);
     } catch (err) {
       console.error("Gemini error:", err);
       setMessages((prev) => [
         ...prev,
-        { id: makeId("msg"), type: "guide", text: "I am unable to read the stars right now." },
+        {
+          id: makeId("msg"),
+          type: "guide",
+          text: "I am unable to read the stars right now.",
+        },
       ]);
     } finally {
       setLoading(false);
@@ -333,27 +412,80 @@ Location: ${location ? `Lat ${location.lat}, Lon ${location.lon}` : "Unknown"}
     }
   };
 
-
-
   // Finish onboarding
+const finishOnboarding = async () => {
+  if (submitting) return;
 
-  const finishOnboarding = async () => {
+  try {
+    setSubmitting(true);
+
+    const birthDate = await AsyncStorage.getItem("birthDate");
+    const birthTime = await AsyncStorage.getItem("birthTime");
+    const birthPlace = await AsyncStorage.getItem("birthPlace");
+
+    const res = await fetch("http://192.168.1.50:5050/api/onboarding", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fullName: userName,
+        birthDate,
+        birthTime,
+        birthPlace,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error("Onboarding API failed");
+    }
+
+    const data = await res.json();
+
+    if (!data?.tempOnboardingId) {
+      throw new Error("tempOnboardingId missing");
+    }
+
+    await AsyncStorage.setItem("tempOnboardingId", data.tempOnboardingId);
     await AsyncStorage.setItem("hasOnboarded", "true");
+
     router.replace("/auth/login");
-  };
+  } catch (err) {
+    console.error("❌ Onboarding error:", err);
+    alert("Something went wrong. Please try again.");
+  } finally {
+    setSubmitting(false); // 🔥 THIS WAS MISSING
+  }
+};
+
 
   return (
-    <LinearGradient colors={colors.backgroundGradient as [string, string]} style={{ flex: 1 }}>
+    <LinearGradient
+      colors={colors.backgroundGradient as [string, string]}
+      style={{ flex: 1 }}
+    >
       <SafeAreaView style={styles.safeArea}>
         <SparkleLayer />
 
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
           <View style={styles.container}>
             {/* Guide avatar */}
-            <Animated.View style={[styles.avatarContainer, { shadowColor: avatarGlow, shadowOpacity: 1, shadowRadius: 20 }]}>
+            <Animated.View
+              style={[
+                styles.avatarContainer,
+                {
+                  shadowColor: Platform.OS === "ios" ? avatarGlow : colors.shadowDark,
+                  shadowOpacity: 1,
+                  shadowRadius: 20,
+                },
+              ]}
+            >
               <Image source={guideData?.image} style={styles.avatar} />
               <Text style={styles.avatarName}>
-                {guideData?.name ? `${guideData.name} — Your Cosmic Guide` : "Your Cosmic Guide"}
+                {guideData?.name
+                  ? `${guideData.name} — Your Cosmic Guide`
+                  : "Your Cosmic Guide"}
               </Text>
             </Animated.View>
 
@@ -363,20 +495,31 @@ Location: ${location ? `Lat ${location.lat}, Lon ${location.lon}` : "Unknown"}
               data={messages}
               renderItem={({ item }) => <MessageBubble item={item} />}
               keyExtractor={(item) => String(item.id)}
-              contentContainerStyle={{ paddingBottom: spacing.lg + 140, paddingTop: spacing.md }}
+              contentContainerStyle={{
+                paddingBottom: spacing.lg + 140,
+                paddingTop: spacing.md,
+              }}
             />
 
             {/* Loading indicator */}
             {loading && (
               <View style={{ marginBottom: spacing.md }}>
                 <ActivityIndicator size="small" color={colors.white} />
-                <Text style={{ color: colors.white, marginTop: 4 }}>✨ Cosmic guide is thinking...</Text>
+                <Text style={{ color: colors.white, marginTop: 4 }}>
+                  ✨ Cosmic guide is thinking...
+                </Text>
               </View>
             )}
 
             {/* Input */}
             {inputVisible && !loading && (
-              <View style={{ flexDirection: "row", alignItems: "center", marginTop: spacing.md }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginTop: spacing.md,
+                }}
+              >
                 <TextInput
                   value={userInput}
                   onChangeText={setUserInput}
@@ -390,8 +533,14 @@ Location: ${location ? `Lat ${location.lat}, Lon ${location.lon}` : "Unknown"}
                     color: colors.white,
                   }}
                 />
-                <Pressable onPress={sendUserQuery} style={{ marginLeft: spacing.sm }}>
-                  <LinearGradient colors={gradients.gold as [string, string]} style={{ padding: spacing.md, borderRadius: 20 }}>
+                <Pressable
+                  onPress={sendUserQuery}
+                  style={{ marginLeft: spacing.sm }}
+                >
+                  <LinearGradient
+                    colors={gradients.gold as [string, string]}
+                    style={{ padding: spacing.md, borderRadius: 20 }}
+                  >
                     <Text style={{ color: colors.black }}>Ask</Text>
                   </LinearGradient>
                 </Pressable>
@@ -401,7 +550,9 @@ Location: ${location ? `Lat ${location.lat}, Lon ${location.lon}` : "Unknown"}
             {/* Fixed CTA */}
             {ctaVisible && (
               <View style={styles.fixedCTA}>
-                <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                <Animated.View
+                  style={{ transform: [{ scale: pulseAnim }] }}
+                >
                   <Pressable onPress={finishOnboarding}>
                     <LinearGradient
                       colors={gradients.gold as [string, string]}
@@ -409,7 +560,9 @@ Location: ${location ? `Lat ${location.lat}, Lon ${location.lon}` : "Unknown"}
                       end={{ x: 1, y: 1 }}
                       style={glassStyle.gradientButton}
                     >
-                      <Text style={glassStyle.selectText}>I want more! </Text>
+                      <Text style={glassStyle.selectText}>
+                        I want more!
+                      </Text>
                     </LinearGradient>
                   </Pressable>
                 </Animated.View>
@@ -427,7 +580,6 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background || colors.surface,
   },
-
   container: {
     flex: 1,
     padding: spacing.lg,
@@ -487,14 +639,12 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.85,
     shadowRadius: 8,
   },
-
   guideBubble: {
     alignSelf: "flex-start",
   },
   userBubble: {
     alignSelf: "flex-end",
   },
-
   messageText: {
     color: colors.white,
     fontSize: 16,
@@ -526,3 +676,5 @@ export const styles = StyleSheet.create({
     shadowRadius: 10,
   },
 });
+
+

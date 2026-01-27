@@ -1,7 +1,7 @@
 // app/index.tsx
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -10,7 +10,9 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors, glassStyle, spacing } from "../theme";
 
 const { width, height } = Dimensions.get("window");
@@ -25,7 +27,7 @@ function SpaceBackground() {
         toValue: 1,
         duration: 25000,
         useNativeDriver: true,
-        easing: (t) => t, // linear
+        easing: (t) => t,
       })
     ).start();
   }, []);
@@ -105,6 +107,37 @@ export default function WelcomeScreen() {
   const floatAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
+  /* 🔐 SESSION CHECK (STEP 11.5) */
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const hasOnboarded = await AsyncStorage.getItem("hasOnboarded");
+        const token = await AsyncStorage.getItem("authToken");
+
+        if (!hasOnboarded) {
+          setCheckingSession(false);
+          return;
+        }
+
+        if (hasOnboarded && token) {
+          router.replace("/(tabs)");
+          return;
+        }
+
+        if (hasOnboarded && !token) {
+          router.replace("/auth/login");
+          return;
+        }
+      } catch (e) {
+        setCheckingSession(false);
+      }
+    };
+
+    checkSession();
+  }, []);
+
   /* Floating animation for card */
   useEffect(() => {
     Animated.loop(
@@ -140,6 +173,22 @@ export default function WelcomeScreen() {
       ])
     ).start();
   }, []);
+
+  /* ⏳ LOADER WHILE CHECKING SESSION */
+  if (checkingSession) {
+    return (
+      <SafeAreaView
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: colors.backgroundGradient[0],
+        }}
+      >
+        <ActivityIndicator size="large" color={colors.gold} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.backgroundGradient[0] }}>
@@ -196,5 +245,3 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
 });
-
-

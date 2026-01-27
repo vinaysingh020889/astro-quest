@@ -30,6 +30,8 @@ const MODEL = "gemini-2.5-flash";
 
 const USER_AVATAR = require("../../assets/images/user.png");
 const DEFAULT_GUIDE_IMG = require("../../assets/images/guides/guide1-lady-Asian.jpg");
+const API_BASE = "http://192.168.1.50:5050";
+
 
 type Message = {
   id: string;
@@ -460,10 +462,28 @@ setIsTyping(true);
 await new Promise(res => setTimeout(res, 500 + Math.random() * 1000));
 
 const tone = detectTone(trimmed); // NEW: detect tone
-const reading = await callGemini(
-  buildReadingPrompt(trimmed, astrologyType, pendingInfo, systemNotes, conversationSummary, intent)
-  + `\nRespond in a ${tone} tone.`
-);
+// 🔥 SEND MESSAGE TO BACKEND (Option A)
+const token = await AsyncStorage.getItem("authToken");
+
+const res = await fetch(`${API_BASE}/api/chat`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  },
+  body: JSON.stringify({
+    message: trimmed,
+  }),
+});
+
+const data = await res.json();
+
+if (!res.ok) {
+  throw new Error(data.message || "Chat failed");
+}
+
+const reading = data.assistantChat.message;
+
 
 // 🔹 Add guide message with animation
 const fullText = `${systemNotes.name ? systemNotes.name + ", " : ""}${reading}`;

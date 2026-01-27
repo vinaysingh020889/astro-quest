@@ -3,6 +3,9 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
+import { logoutUser } from "../../utils/logout";
+
+
 import {
   Alert,
   Image,
@@ -106,6 +109,31 @@ export default function ProfileScreen() {
       ]
     );
   };
+
+  // ADDing  LOGOUT HANDLER
+  const handleLogout = async () => {
+    Alert.alert(
+      "Confirm Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            await logoutUser();
+            router.replace("/auth/login");
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -237,6 +265,20 @@ export default function ProfileScreen() {
               <Ionicons name="trash" size={18} color={colors.accent} />
               <Text style={styles.rowBtnText}>Clear Local Data</Text>
             </TouchableOpacity>
+            {/* ⬇️ ADD LOGOUT BUTTON EXACTLY HERE ⬇️ */}
+            <TouchableOpacity
+              onPress={handleLogout}
+              style={[
+                styles.rowBtn,
+                { backgroundColor: "#bc3e3eff", marginTop: 6 },
+              ]}
+            >
+              <Ionicons name="log-out" size={18} color="#fff" />
+              <Text style={[styles.rowBtnText, { color: "#fff" }]}>
+                Logout
+              </Text>
+            </TouchableOpacity>
+
           </View>
         </View>
       </ScrollView>

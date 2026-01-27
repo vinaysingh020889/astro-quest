@@ -1,14 +1,16 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import Session from "../session/session.model"; // ✅ ADDED
 
 export interface AuthRequest extends Request {
   user?: {
     userId: string;
     email: string;
+    sessionId: string; // ✅ ADDED
   };
 }
 
-export const authMiddleware = (
+export const authMiddleware = async ( // ✅ async added (required)
   req: AuthRequest,
   res: Response,
   next: NextFunction
@@ -32,11 +34,26 @@ export const authMiddleware = (
     ) as {
       userId: string;
       email: string;
+      sessionId: string; // ✅ ADDED
     };
+
+    // 🔐 SESSION CHECK (ONLY NEW LOGIC)
+    const session = await Session.findOne({
+      _id: decoded.sessionId,
+      userId: decoded.userId,
+      isActive: true,
+    });
+
+    if (!session) {
+      return res
+        .status(401)
+        .json({ message: "Session expired. Please login again." });
+    }
 
     req.user = {
       userId: decoded.userId,
       email: decoded.email,
+      sessionId: decoded.sessionId,
     };
 
     next();
