@@ -1,13 +1,15 @@
 import Chat from "./chat.model";
-import { AuthRequest } from "../middleware/auth.middleware";
+// import { AuthRequest } from "../middleware/auth.middleware";
 import { Response } from "express";
+import { Request } from "express";
+
 
 /**
  * GET CHAT SESSIONS (for sidebar)
  * - One row per session
  * - Shows last message + time
  */
-export const getChatSessions = async (req: AuthRequest, res: Response) => {
+export const getChatSessions = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
 
@@ -43,7 +45,7 @@ export const getChatSessions = async (req: AuthRequest, res: Response) => {
 /**
  * GET MESSAGES OF ONE SESSION
  */
-export const getSessionChats = async (req: AuthRequest, res: Response) => {
+export const getSessionChats = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.userId;
     const { sessionId } = req.params;

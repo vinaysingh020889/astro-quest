@@ -2,16 +2,16 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import Session from "../session/session.model"; // ✅ ADDED
 
-export interface AuthRequest extends Request {
-  user?: {
-    userId: string;
-    email: string;
-    sessionId: string; // ✅ ADDED
-  };
-}
+// export interface AuthRequest extends Request {
+//   user?: {
+//     userId: string;
+//     email: string;
+//     sessionId: string; // ✅ ADDED
+//   };
+// }
 
 export const authMiddleware = async ( // ✅ async added (required)
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {

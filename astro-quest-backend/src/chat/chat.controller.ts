@@ -1,9 +1,10 @@
 import Chat from "./chat.model";
 import Onboarding from "../models/Onboarding";
-import { AuthRequest } from "../middleware/auth.middleware";
+// import { AuthRequest } from "../middleware/auth.middleware";
 import { Response } from "express";
 import crypto from "crypto";
 import { generatePrediction } from "../services/gemini.service";
+import { Request } from "express";
 
 
 
@@ -12,7 +13,7 @@ import { generatePrediction } from "../services/gemini.service";
  * - Frontend sends { message, sessionId? }
  * - Backend handles onboarding + AI context
  */
-export const saveChat = async (req: AuthRequest, res: Response) => {
+export const saveChat = async (req: Request, res: Response) => {
   try {
     const { message, sessionId } = req.body;
 
@@ -82,7 +83,7 @@ Birth Place: ${onboarding.birthPlace}
 /**
  * GET CHAT HISTORY (current user)
  */
-export const getChats = async (req: AuthRequest, res: Response) => {
+export const getChats = async (req: Request, res: Response) => {
   try {
     const chats = await Chat.find({
       userId: req.user!.userId,
