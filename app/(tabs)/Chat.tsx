@@ -597,8 +597,8 @@ return (
     )}
 
     <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? tabBarHeight + insets.bottom : 0}
 
     >
@@ -812,7 +812,7 @@ export const styles = StyleSheet.create({
   bubbleText: {
     fontSize: 14,
     lineHeight: 18,
-    color: colors.white,
+    color: "#1e3a8a",
   },
 
   timestamp: {

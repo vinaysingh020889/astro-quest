@@ -444,7 +444,26 @@ const finishOnboarding = async () => {
       throw new Error("tempOnboardingId missing");
     }
 
-    await AsyncStorage.setItem("tempOnboardingId", data.tempOnboardingId);
+   
+    //  Save COMPLETE profile locally for Profile.tsx
+    await AsyncStorage.setItem(
+      "userProfile",
+      JSON.stringify({
+        name: data.fullName || userName,
+        email: data.email || "",
+        dob: data.birthDate || birthDate,
+        city: data.city || birthPlace || "",
+        gender: data.gender || "",
+        profession: data.profession || "Seeker",
+        preferences: data.preferences || [],
+        coins: data.coins ?? 0,
+        xp: data.xp ?? 0,
+        streak: data.streak ?? 0,
+        avatar: data.avatar || "https://i.pravatar.cc/150?img=1",
+      })
+    );
+
+
     await AsyncStorage.setItem("hasOnboarded", "true");
 
     router.replace("/auth/login");

@@ -26,6 +26,7 @@ export const logoutUser = async () => {
       "birthTime",
       "birthPlace",
       "selectedGuideId",
+      "userProfile", // 🔥 ADD THIS For Profile
     ]);
   }
 };
