@@ -1,3 +1,5 @@
+// src/services/gemini.service.ts
+
 import axios from "axios";
 
 export const generatePrediction = async (prompt: string): Promise<string> => {
@@ -7,7 +9,7 @@ export const generatePrediction = async (prompt: string): Promise<string> => {
 
   try {
     const response = await axios.post(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
       {
         contents: [{ parts: [{ text: prompt }] }],
       },
@@ -25,7 +27,10 @@ export const generatePrediction = async (prompt: string): Promise<string> => {
 
     return text;
   } catch (error: any) {
-    console.error("❌ Gemini backend error:", error.response?.data || error.message);
+    console.error(
+      "❌ Gemini backend error:",
+      error.response?.data || error.message
+    );
     throw new Error("Gemini generation failed");
   }
 };
