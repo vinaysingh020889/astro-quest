@@ -4,9 +4,9 @@ import connectDB from "./config/db"; // 👈 or correct path
 dotenv.config(); // ✅ MUST be first
 
 import app from "./app";
-import authRoutes from "./auth/auth.routes";
+// import authRoutes from "./auth/auth.routes";
 
-app.use("/auth", authRoutes);
+// app.use("/auth", authRoutes);
 
 const PORT = process.env.PORT || 5050;
 
