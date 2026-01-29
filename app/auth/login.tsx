@@ -12,8 +12,9 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 
-// ⚠️ USE MAC IP, NOT localhost
-const API_BASE = "http://192.168.1.50:5050";
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL!;
+
 
 /* 🔹 helper functions (ONLY ADDED, nothing removed) */
 const showSuccess = (title: string, message: string) => {
@@ -94,7 +95,7 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/send-otp`, {
+      const res = await fetch(`${API_BASE_URL}/auth/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: identifier }),
@@ -126,7 +127,7 @@ export default function LoginScreen() {
       const tempOnboardingId = await AsyncStorage.getItem("tempOnboardingId");
       console.log("🧩 tempOnboardingId from AsyncStorage:", tempOnboardingId);
 
-      const res = await fetch(`${API_BASE}/auth/verify-otp`, {
+      const res = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

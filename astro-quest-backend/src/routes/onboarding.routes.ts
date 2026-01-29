@@ -3,6 +3,8 @@
 import express from "express";
 import crypto from "crypto";
 import Onboarding from "../models/Onboarding";
+import { generatePrediction } from "../services/gemini.service";
+
 
 const router = express.Router();
 
@@ -37,6 +39,36 @@ router.post("/onboarding", async (req, res) => {
   } catch (err) {
     console.error("Onboarding error:", err);
     res.status(500).json({ error: "Onboarding failed" });
+  }
+});
+
+
+/**
+ * ONBOARDING CHAT (Gemini via backend)
+ */
+router.post("/onboarding/chat", async (req, res) => {
+  try {
+    const { message, time, location } = req.body;
+
+    if (!message) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+
+    const prompt = `
+You are a highly respected Indian Vedic astrologer, deeply skilled in Prashna Kundali.
+Respond in 1–2 sentences only. Be calm, spiritual, precise, and confident.
+
+Question: ${message}
+Time of asking: ${time || "Unknown"}
+Location: ${location || "Unknown"}
+    `;
+
+    const reply = await generatePrediction(prompt);
+
+    res.json({ reply });
+  } catch (err) {
+    console.error("Onboarding chat error:", err);
+    res.status(500).json({ error: "Failed to generate response" });
   }
 });
 

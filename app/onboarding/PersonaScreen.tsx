@@ -1,5 +1,5 @@
 // PersonaScreen.tsx
-import { GoogleGenAI } from "@google/genai"; // Gemini API client
+// import { GoogleGenAI } from "@google/genai"; // Gemini API client
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
@@ -26,9 +26,9 @@ import { colors, glassStyle, gradients, spacing } from "../../theme";
 
 const { width, height } = Dimensions.get("window");
 
-const getGeminiKey = () =>
-  process.env.EXPO_PUBLIC_GEMINI_API_KEY ||
-  "AIzaSyD4Xj4GBoJG5BsWoOUE0n7H_vc_IyqLgVU";
+// const getGeminiKey = () =>
+//   process.env.EXPO_PUBLIC_GEMINI_API_KEY ||
+//   "AIzaSyD4Xj4GBoJG5BsWoOUE0n7H_vc_IyqLgVU";
 
 const makeId = (prefix = "id") =>
   `${prefix}_${Date.now().toString(36)}_${Math.random()
@@ -340,22 +340,22 @@ export default function PersonaScreen() {
     setInputVisible(false);
     setLoading(true);
 
-    const GEMINI_API_KEY = getGeminiKey();
+    // const GEMINI_API_KEY = getGeminiKey();
 
-    // 🔒 KEY CHECK
-    if (!GEMINI_API_KEY) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: makeId("msg"),
-          type: "guide",
-          text: "⚠️ Gemini API key missing. Add EXPO_PUBLIC_GEMINI_API_KEY and restart Expo.",
-        },
-      ]);
-      setLoading(false);
-      setInputVisible(true);
-      return;
-    }
+    // // 🔒 KEY CHECK
+    // if (!GEMINI_API_KEY) {
+    //   setMessages((prev) => [
+    //     ...prev,
+    //     {
+    //       id: makeId("msg"),
+    //       type: "guide",
+    //       text: "⚠️ Gemini API key missing. Add EXPO_PUBLIC_GEMINI_API_KEY and restart Expo.",
+    //     },
+    //   ]);
+    //   setLoading(false);
+    //   setInputVisible(true);
+    //   return;
+    // }
 
     const now = new Date().toISOString();
     const prompt = `You are a highly respected Indian Vedic astrologer, deeply skilled in Prashna Kundali (Horary Astrology).
@@ -366,38 +366,84 @@ Time of asking: ${now}
 Location: ${location ? `Lat ${location.lat}, Lon ${location.lon}` : "Unknown"
       }`;
 
-    try {
-      const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+    //   try {
+    //     const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: prompt }],
-          },
-        ],
+    //     const response = await ai.models.generateContent({
+    //       model: "gemini-2.5-flash",
+    //       contents: [
+    //         {
+    //           role: "user",
+    //           parts: [{ text: prompt }],
+    //         },
+    //       ],
+    //     });
+
+    //     const text =
+    //       response.text?.trim() ||
+    //       "The stars are silent right now. Please try again shortly.";
+
+    //     const newMessage = { id: makeId("msg"), type: "guide", text };
+    //     setMessages((prev) => [...prev, newMessage]);
+
+    //     // persist predictions
+    //     const prevRaw = await AsyncStorage.getItem("userPredictions");
+    //     const prev = prevRaw ? JSON.parse(prevRaw) : [];
+    //     prev.push(text);
+    //     await AsyncStorage.setItem(
+    //       "userPredictions",
+    //       JSON.stringify(prev)
+    //     );
+
+    //     setTimeout(() => setCtaVisible(true), 500);
+    //   } catch (err) {
+    //     console.error("Gemini error:", err);
+    //     setMessages((prev) => [
+    //       ...prev,
+    //       {
+    //         id: makeId("msg"),
+    //         type: "guide",
+    //         text: "I am unable to read the stars right now.",
+    //       },
+    //     ]);
+    // } 
+    try {
+      const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL!;
+
+      const res = await fetch(`${API_BASE_URL}/api/onboarding/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: query,
+          time: now,
+          location: location
+            ? `Lat ${location.lat}, Lon ${location.lon}`
+            : "Unknown",
+        }),
       });
 
+      if (!res.ok) {
+        throw new Error("Backend Gemini failed");
+      }
+
+      const data = await res.json();
       const text =
-        response.text?.trim() ||
-        "The stars are silent right now. Please try again shortly.";
+        data.reply || "The stars are silent right now. Please try again shortly.";
 
       const newMessage = { id: makeId("msg"), type: "guide", text };
       setMessages((prev) => [...prev, newMessage]);
 
-      // persist predictions
+      // persist predictions (UNCHANGED behavior)
       const prevRaw = await AsyncStorage.getItem("userPredictions");
       const prev = prevRaw ? JSON.parse(prevRaw) : [];
       prev.push(text);
-      await AsyncStorage.setItem(
-        "userPredictions",
-        JSON.stringify(prev)
-      );
+      await AsyncStorage.setItem("userPredictions", JSON.stringify(prev));
 
       setTimeout(() => setCtaVisible(true), 500);
     } catch (err) {
-      console.error("Gemini error:", err);
+      console.error("Onboarding chat error:", err);
       setMessages((prev) => [
         ...prev,
         {
@@ -406,74 +452,79 @@ Location: ${location ? `Lat ${location.lat}, Lon ${location.lon}` : "Unknown"
           text: "I am unable to read the stars right now.",
         },
       ]);
-    } finally {
+    }
+
+    finally {
       setLoading(false);
       setInputVisible(true);
     }
   };
 
   // Finish onboarding
-const finishOnboarding = async () => {
-  if (submitting) return;
+  const finishOnboarding = async () => {
+    if (submitting) return;
 
-  try {
-    setSubmitting(true);
+    try {
+      setSubmitting(true);
 
-    const birthDate = await AsyncStorage.getItem("birthDate");
-    const birthTime = await AsyncStorage.getItem("birthTime");
-    const birthPlace = await AsyncStorage.getItem("birthPlace");
+      const birthDate = await AsyncStorage.getItem("birthDate");
+      const birthTime = await AsyncStorage.getItem("birthTime");
+      const birthPlace = await AsyncStorage.getItem("birthPlace");
 
-    const res = await fetch("http://192.168.1.50:5050/api/onboarding", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fullName: userName,
-        birthDate,
-        birthTime,
-        birthPlace,
-      }),
-    });
+      const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL!;
 
-    if (!res.ok) {
-      throw new Error("Onboarding API failed");
+      const res = await fetch(`${API_BASE_URL}/api/onboarding`, {
+
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: userName,
+          birthDate,
+          birthTime,
+          birthPlace,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Onboarding API failed");
+      }
+
+      const data = await res.json();
+
+      if (!data?.tempOnboardingId) {
+        throw new Error("tempOnboardingId missing");
+      }
+
+
+      //  Save COMPLETE profile locally for Profile.tsx
+      await AsyncStorage.setItem(
+        "userProfile",
+        JSON.stringify({
+          name: data.fullName || userName,
+          email: data.email || "",
+          dob: data.birthDate || birthDate,
+          city: data.city || birthPlace || "",
+          gender: data.gender || "",
+          profession: data.profession || "Seeker",
+          preferences: data.preferences || [],
+          coins: data.coins ?? 0,
+          xp: data.xp ?? 0,
+          streak: data.streak ?? 0,
+          avatar: data.avatar || "https://i.pravatar.cc/150?img=1",
+        })
+      );
+
+
+      await AsyncStorage.setItem("hasOnboarded", "true");
+
+      router.replace("/auth/login");
+    } catch (err) {
+      console.error("❌ Onboarding error:", err);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false); // 🔥 THIS WAS MISSING
     }
-
-    const data = await res.json();
-
-    if (!data?.tempOnboardingId) {
-      throw new Error("tempOnboardingId missing");
-    }
-
-   
-    //  Save COMPLETE profile locally for Profile.tsx
-    await AsyncStorage.setItem(
-      "userProfile",
-      JSON.stringify({
-        name: data.fullName || userName,
-        email: data.email || "",
-        dob: data.birthDate || birthDate,
-        city: data.city || birthPlace || "",
-        gender: data.gender || "",
-        profession: data.profession || "Seeker",
-        preferences: data.preferences || [],
-        coins: data.coins ?? 0,
-        xp: data.xp ?? 0,
-        streak: data.streak ?? 0,
-        avatar: data.avatar || "https://i.pravatar.cc/150?img=1",
-      })
-    );
-
-
-    await AsyncStorage.setItem("hasOnboarded", "true");
-
-    router.replace("/auth/login");
-  } catch (err) {
-    console.error("❌ Onboarding error:", err);
-    alert("Something went wrong. Please try again.");
-  } finally {
-    setSubmitting(false); // 🔥 THIS WAS MISSING
-  }
-};
+  };
 
 
   return (
