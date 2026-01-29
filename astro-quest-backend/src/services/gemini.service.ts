@@ -11,7 +11,13 @@ export const generatePrediction = async (prompt: string): Promise<string> => {
     const response = await axios.post(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
       {
-        contents: [{ parts: [{ text: prompt }] }],
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: prompt }],
+          },
+        ],
+
       },
       {
         params: { key: process.env.GEMINI_API_KEY },
